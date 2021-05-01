@@ -1,0 +1,59 @@
+version: '3.7'
+
+services:
+  mongo:
+    container_name: task_app_mongo
+    image: mongo
+    networks:
+      nodejs_network:
+        ipv4_address: 172.29.0.11
+        aliases:
+          - taskapp.db.mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password1 
+
+  mongo-express:
+    container_name: task_app_mongo_express
+    image: mongo-express
+    networks:
+      nodejs_network:
+        ipv4_address: 172.29.0.12
+        aliases:
+          - taskapp.db.mongoexpress
+    ports:
+      - 8292:8081
+    restart: always
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password1 
+      ME_CONFIG_MONGODB_SERVER: task_app_mongo
+
+  nodejs:
+    container_name: task_app_nodejs
+    image: node:13
+    networks:
+      nodejs_network:
+        ipv4_address: 172.29.0.13
+        aliases:
+          - taskapp.web.nodejs
+    ports:
+      - 8291:3000
+    expose:
+      - 8291
+    user: node
+    volumes:
+      - ./:/home/node/app
+    working_dir: /home/node/app
+    links:
+      - mongo:taskapp.db.mongo
+    command: "npm run dev"
+
+networks:
+  nodejs_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.29.0.0/16
